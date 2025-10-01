@@ -1,0 +1,404 @@
+﻿:root {
+    color-scheme: light dark;
+    font-family: "Segoe UI", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    touch-action: manipulation;
+    background: var(--body-bg);
+    color: var(--text-color);
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+.game {
+    width: min(96vw, 480px);
+    display: grid;
+    gap: clamp(12px, 2vw, 20px);
+    padding: clamp(16px, 4vw, 24px);
+    background: var(--game-bg);
+    border-radius: var(--game-radius, 24px);
+    box-shadow: var(--game-shadow);
+    backdrop-filter: var(--game-backdrop, blur(12px));
+    border: var(--game-border, none);
+}
+
+.game__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+    gap: clamp(12px, 2vw, 20px);
+    align-items: start;
+}
+
+.game__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.scoreboard,
+.next {
+    flex: 1;
+    min-width: 150px;
+    background: var(--panel-bg, transparent);
+    padding: var(--panel-padding, 0);
+    border-radius: var(--panel-radius, 18px);
+    box-shadow: var(--panel-shadow, none);
+    border: var(--panel-border, none);
+}
+
+.scoreboard__label,
+.next__label,
+.theme-switcher__label {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: var(--label-opacity, 0.8);
+    color: var(--label-color, inherit);
+}
+
+.scoreboard__value {
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: var(--scoreboard-spacing, 0.08em);
+    margin-top: 4px;
+    background: var(--scoreboard-bg, transparent);
+    color: var(--scoreboard-color, inherit);
+    padding: var(--scoreboard-padding, 0);
+    border-radius: var(--scoreboard-radius, 12px);
+    text-align: center;
+    box-shadow: var(--scoreboard-shadow, none);
+    text-shadow: var(--scoreboard-text-shadow, none);
+    font-family: var(--scoreboard-font, inherit);
+}
+
+.next__slots {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.next__slots .ball {
+    width: 28px;
+    height: 28px;
+}
+
+.game__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+.game__actions {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+    justify-items: stretch;
+    min-width: min(100%, 210px);
+}
+
+.game__actions .button {
+    width: 100%;
+    justify-content: center;
+}
+
+.button--primary {
+    font-size: 0.95rem;
+    padding: 10px 18px;
+}
+
+
+.theme-switcher {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.theme-switcher__select {
+    appearance: none;
+    background: var(--select-bg, rgba(255, 255, 255, 0.08));
+    color: var(--select-color, inherit);
+    border: var(--select-border, 1px solid rgba(255, 255, 255, 0.2));
+    border-radius: 999px;
+    padding: 6px 18px;
+    font: inherit;
+    cursor: pointer;
+    box-shadow: var(--select-shadow, none);
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-switcher__select:focus-visible {
+    outline: 2px solid var(--focus-outline, rgba(72, 198, 239, 0.8));
+    outline-offset: 2px;
+}
+
+.button {
+    background: var(--button-bg);
+    color: var(--button-color);
+    border: var(--button-border, none);
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.3s ease;
+    box-shadow: var(--button-shadow);
+    text-transform: var(--button-text-transform, none);
+    letter-spacing: var(--button-letter-spacing, normal);
+}
+
+.button:active {
+    transform: translateY(1px);
+}
+
+.board {
+    display: grid;
+    width: 100%;
+    max-width: min(92vw, 500px);
+    aspect-ratio: 1;
+    grid-template-columns: repeat(9, 1fr);
+    grid-auto-rows: 1fr;
+    gap: var(--grid-gap, clamp(4px, 1vw, 12px));
+    padding: clamp(8px, 2vw, 12px);
+    background: var(--board-bg);
+    border-radius: var(--board-radius, 16px);
+    position: relative;
+    margin: 0 auto;
+    box-shadow: var(--board-shadow, none);
+    border: var(--board-border, none);
+}
+
+.cell {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--cell-bg);
+    border-radius: var(--cell-radius, 14px);
+    display: grid;
+    place-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: border 0.1s ease, background 0.1s ease, box-shadow 0.1s ease;
+    border: var(--cell-border, none);
+    padding: 0;
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    box-shadow: var(--cell-shadow, none);
+}
+
+.cell:focus-visible {
+    outline: 2px solid var(--focus-outline, rgba(72, 198, 239, 0.9));
+    outline-offset: 2px;
+}
+
+.cell--highlight {
+    background: var(--highlight-bg, rgba(72, 198, 239, 0.22));
+    outline: 2px solid var(--highlight-outline, rgba(72, 198, 239, 0.8));
+}
+
+.ball {
+    width: min(76%, 44px);
+    height: min(76%, 44px);
+    border-radius: 50%;
+    box-shadow: var(--ball-shadow, inset 3px 3px 8px rgba(0, 0, 0, 0.45));
+    position: relative;
+    transform: scale(0.92);
+    transition: transform 0.15s ease;
+}
+
+.ball--in-flight {
+    position: absolute;
+    pointer-events: none;
+    transition: top 0.03s linear, left 0.03s linear;
+    will-change: top, left;
+}
+
+.ball::after {
+    content: "";
+    position: absolute;
+    top: 18%;
+    left: 20%;
+    width: 32%;
+    height: 32%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.8);
+    filter: blur(1px);
+}
+
+.ball--spawn {
+    animation: pop-in 0.18s ease;
+}
+
+.ball--vanish {
+    animation: pop-out 0.18s ease forwards;
+}
+
+@keyframes pop-in {
+    from {
+        transform: scale(0.4);
+        opacity: 0.2;
+    }
+    to {
+        transform: scale(0.92);
+        opacity: 1;
+    }
+}
+
+@keyframes pop-out {
+    to {
+        transform: scale(0.1);
+        opacity: 0;
+    }
+}
+
+.status {
+    flex: 1;
+    min-height: 1.2rem;
+    font-size: 0.9rem;
+    opacity: var(--status-opacity, 0.85);
+}
+
+@media (max-width: 560px) {
+    .game__header {
+        grid-template-columns: 1fr;
+    }
+
+    .game__actions {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .game__actions .button {
+        width: 100%;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    body {
+        padding: 16px;
+        align-items: start;
+    }
+
+    .game {
+        width: min(90vh, 520px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+body.theme-modern {
+    --body-bg: linear-gradient(135deg, #161c28, #0f131b);
+    --text-color: #f4f6fb;
+    --game-bg: rgba(22, 27, 39, 0.92);
+    --game-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    --panel-bg: transparent;
+    --panel-radius: 0;
+    --grid-gap: clamp(4px, 1vw, 12px);
+    --button-bg: linear-gradient(135deg, #5aa6ff, #7ad3ff);
+    --button-color: #0c1524;
+    --button-shadow: 0 12px 26px rgba(90, 166, 255, 0.28);
+    --focus-outline: rgba(122, 211, 255, 0.85);
+    --highlight-bg: rgba(122, 211, 255, 0.2);
+    --highlight-outline: rgba(122, 211, 255, 0.75);
+    --board-bg: rgba(18, 23, 34, 0.9);
+    --board-radius: 18px;
+    --cell-bg: rgba(255, 255, 255, 0.08);
+    --cell-radius: 12px;
+    --ball-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.4);
+    --select-bg: rgba(255, 255, 255, 0.1);
+    --select-border: 1px solid rgba(255, 255, 255, 0.16);
+    --select-color: inherit;
+    --label-opacity: 0.75;
+    --status-opacity: 0.85;
+    --scoreboard-bg: rgba(20, 27, 40, 0.8);
+    --scoreboard-color: #e8f4ff;
+    --scoreboard-padding: 8px 16px;
+    --scoreboard-radius: 16px;
+    --scoreboard-shadow: inset 0 0 18px rgba(122, 211, 255, 0.12);
+    --scoreboard-text-shadow: 0 0 12px rgba(122, 211, 255, 0.25);
+    --scoreboard-font: "Segoe UI Semibold", sans-serif;
+    --scoreboard-spacing: 0.06em;
+}
+
+body.theme-classic {
+    --body-bg: linear-gradient(160deg, #23262c, #101216);
+    --text-color: #f1f3f6;
+    --game-bg: rgba(12, 14, 18, 0.9);
+    --game-shadow: 0 20px 48px rgba(0, 0, 0, 0.55);
+    --game-border: 1px solid rgba(176, 198, 222, 0.18);
+    --panel-bg: rgba(20, 23, 30, 0.78);
+    --panel-padding: 10px 16px;
+    --panel-radius: 12px;
+    --panel-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
+    --label-opacity: 0.7;
+    --label-color: #a5c7dd;
+    --grid-gap: 6px;
+    --board-bg: linear-gradient(160deg, #dcdfe6 0%, #b9c0cc 100%);
+    --board-border: 2px solid #9aa3b0;
+    --board-radius: 16px;
+    --board-shadow: 0 25px 40px rgba(0, 0, 0, 0.5);
+    --cell-bg: linear-gradient(145deg, #f9f9fb 0%, #ccd4df 100%);
+    --cell-radius: 8px;
+    --cell-border: 1px solid rgba(120, 130, 145, 0.6);
+    --cell-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.9), inset -2px -2px 6px rgba(80, 90, 105, 0.3);
+    --focus-outline: rgba(94, 167, 232, 0.8);
+    --highlight-bg: rgba(94, 167, 232, 0.25);
+    --highlight-outline: rgba(94, 167, 232, 0.7);
+    --ball-shadow: inset 0 0 14px rgba(0, 0, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.4);
+    --button-bg: linear-gradient(180deg, #345d9d 0%, #274a7d 100%);
+    --button-color: #f1f6ff;
+    --button-border: 1px solid rgba(50, 98, 158, 0.85);
+    --button-shadow: 0 12px 22px rgba(47, 85, 140, 0.35);
+    --button-text-transform: none;
+    --button-letter-spacing: 0.02em;
+    --select-bg: rgba(24, 30, 44, 0.85);
+    --select-border: 1px solid rgba(110, 152, 204, 0.6);
+    --select-color: #e3ecf5;
+    --select-shadow: inset 0 0 10px rgba(54, 89, 140, 0.35);
+    --scoreboard-bg: rgba(18, 22, 34, 0.9);
+    --scoreboard-color: #79b8ff;
+    --scoreboard-padding: 10px 20px;
+    --scoreboard-radius: 10px;
+    --scoreboard-shadow: inset 0 0 18px rgba(88, 140, 200, 0.25);
+    --scoreboard-text-shadow: 0 0 12px rgba(79, 130, 194, 0.35);
+    --scoreboard-font: "DS-Digital", "Segoe UI", sans-serif;
+    --scoreboard-spacing: 0.12em;
+    --status-opacity: 0.88;
+}
+
+
+
+
+
+
+
+
+
+
+

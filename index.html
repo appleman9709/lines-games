@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Прогрессивное веб-приложение Lines 98 с современным дизайном.">
+    <meta name="theme-color" content="#0d47a1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Lines 98">
+    <meta name="application-name" content="Lines 98">
+    <title>Lines 98</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-180.png">
+</head>
+<body class="theme-modern">
+    <main class="game">
+        <header class="game__header">
+            <div class="game__summary">
+                <div class="scoreboard" role="group" aria-label="Счёт">
+                    <div class="scoreboard__label">Очки</div>
+                    <div class="scoreboard__value" id="score">0</div>
+                </div>
+                <div class="next" role="group" aria-label="Следующие шары">
+                    <div class="next__label">Следующие</div>
+                    <div class="next__slots" id="next"></div>
+                </div>
+            </div>
+            <div class="game__actions" role="group" aria-label="Управление игрой">
+                <button class="button button--primary" id="newGame" type="button">Новая игра</button>
+                <label class="theme-switcher" for="themeSelect">
+                    <span class="theme-switcher__label">Тема</span>
+                    <select id="themeSelect" class="theme-switcher__select">
+                        <option value="modern">Современная</option>
+                        <option value="classic">Классика</option>
+                    </select>
+                </label>
+            </div>
+        </header>
+        <section class="board" id="board" aria-label="Игровое поле 9 на 9"></section>
+        <footer class="game__footer">
+            <div class="status" id="status" role="status"></div>
+        </footer>
+    </main>
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js').catch((error) => {
+                    console.warn('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
