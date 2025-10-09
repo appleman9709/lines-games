@@ -17,6 +17,12 @@ body {
     background: var(--body-bg);
     color: var(--text-color);
     transition: background 0.4s ease, color 0.4s ease;
+    /* Оптимизации для мобильных устройств */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeSpeed;
+    /* Предотвращаем зум при двойном тапе */
+    touch-action: manipulation;
 }
 
 .game {
@@ -182,6 +188,10 @@ body {
     margin: 0 auto;
     box-shadow: var(--board-shadow, none);
     border: var(--board-border, none);
+    /* Оптимизации для производительности */
+    contain: layout style paint;
+    transform: translateZ(0); /* Создаем новый слой композиции */
+    will-change: auto; /* Сбрасываем will-change после инициализации */
 }
 
 .cell {
@@ -218,15 +228,22 @@ body {
     border-radius: 50%;
     box-shadow: var(--ball-shadow, inset 3px 3px 8px rgba(0, 0, 0, 0.45));
     position: relative;
-    transform: scale(1);
+    transform: scale(1) translateZ(0); /* Включаем аппаратное ускорение */
     transition: transform 0.15s ease;
+    /* Оптимизации для производительности */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    contain: layout style paint;
 }
 
 .ball--in-flight {
     position: absolute;
     pointer-events: none;
-    transition: top 0.03s linear, left 0.03s linear;
-    will-change: top, left;
+    transition: transform 0.03s ease-out;
+    will-change: transform;
+    transform: translate3d(0, 0, 0); /* Включаем аппаратное ускорение */
+    backface-visibility: hidden; /* Предотвращаем мерцание */
+    -webkit-backface-visibility: hidden;
 }
 
 .ball::after {
@@ -322,11 +339,15 @@ body {
 
     .board {
         padding: clamp(2px, 0.9vw, 6px);
+        /* Дополнительные оптимизации для маленьких экранов */
+        gap: clamp(2px, 0.8vw, 6px);
     }
 
     .ball {
         width: min(96%, clamp(34px, 11vw, 58px));
         height: min(96%, clamp(34px, 11vw, 58px));
+        /* Упрощаем анимации на слабых устройствах */
+        transition: transform 0.1s ease;
     }
 
     .next__slots {
@@ -336,6 +357,34 @@ body {
     .next__slots .ball {
         width: clamp(28px, 9vw, 38px);
         height: clamp(28px, 9vw, 38px);
+    }
+    
+    /* Упрощаем анимации для слабых мобильных устройств */
+    .ball--spawn {
+        animation: pop-in-mobile 0.12s ease;
+    }
+
+    .ball--vanish {
+        animation: pop-out-mobile 0.12s ease forwards;
+    }
+}
+
+/* Упрощенные анимации для мобильных устройств */
+@keyframes pop-in-mobile {
+    from {
+        transform: scale(0.6) translateZ(0);
+        opacity: 0.3;
+    }
+    to {
+        transform: scale(1) translateZ(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pop-out-mobile {
+    to {
+        transform: scale(0.2) translateZ(0);
+        opacity: 0;
     }
 }
 
@@ -350,6 +399,30 @@ body {
     }
 }
 
+/* Оптимизации для устройств с ограниченными ресурсами */
+@media (max-width: 560px) and (max-height: 800px) {
+    /* Упрощаем сложные эффекты на мобильных */
+    .ball::after {
+        display: none; /* Убираем дополнительный эффект блика */
+    }
+    
+    .ball {
+        box-shadow: var(--ball-shadow-mobile, inset 2px 2px 4px rgba(0, 0, 0, 0.3));
+    }
+}
+
+/* Дополнительные оптимизации для слабых устройств */
+@media (max-width: 360px) {
+    .ball--spawn,
+    .ball--vanish {
+        animation-duration: 0.08s !important;
+    }
+    
+    .ball--in-flight {
+        transition-duration: 0.02s !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -358,6 +431,14 @@ body {
         animation-iteration-count: 1 !important;
         transition-duration: 0.001ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* Оптимизации для устройств с низкой плотностью пикселей */
+@media (-webkit-min-device-pixel-ratio: 1), (min-resolution: 96dpi) {
+    .ball {
+        image-rendering: optimizeSpeed;
+        image-rendering: -webkit-optimize-contrast;
     }
 }
 
@@ -380,6 +461,7 @@ body.theme-modern {
     --cell-bg: rgba(255, 255, 255, 0.08);
     --cell-radius: 12px;
     --ball-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.4);
+    --ball-shadow-mobile: inset 1px 1px 3px rgba(0, 0, 0, 0.3);
     --select-bg: rgba(255, 255, 255, 0.1);
     --select-border: 1px solid rgba(255, 255, 255, 0.16);
     --select-color: inherit;
@@ -420,6 +502,7 @@ body.theme-classic {
     --highlight-bg: rgba(94, 167, 232, 0.25);
     --highlight-outline: rgba(94, 167, 232, 0.7);
     --ball-shadow: inset 0 0 14px rgba(0, 0, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.4);
+    --ball-shadow-mobile: inset 0 0 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.3);
     --button-bg: linear-gradient(180deg, #345d9d 0%, #274a7d 100%);
     --button-color: #f1f6ff;
     --button-border: 1px solid rgba(50, 98, 158, 0.85);

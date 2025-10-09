@@ -41,11 +41,35 @@
         ? window.matchMedia("(prefers-reduced-motion: reduce)")
         : null;
 
-    const moveStepDelay = () => (motionQuery && motionQuery.matches ? 0 : 30);
+    const moveStepDelay = () => {
+        if (motionQuery && motionQuery.matches) {
+            return 0;
+        }
+        // Адаптивная задержка в зависимости от размера экрана
+        const isMobile = window.innerWidth <= 560;
+        const isSmallScreen = window.innerWidth <= 360;
+        
+        if (isSmallScreen) {
+            return 15; // Быстрее для маленьких экранов
+        } else if (isMobile) {
+            return 20; // Средняя скорость для мобильных
+        }
+        return 30; // Стандартная скорость для десктопа
+    };
 
     const vibrate = (pattern) => {
         if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
             try {
+                // Оптимизация вибрации для мобильных устройств
+                const isMobile = window.innerWidth <= 560;
+                if (isMobile) {
+                    // Уменьшаем интенсивность вибрации на мобильных
+                    if (Array.isArray(pattern)) {
+                        pattern = pattern.map(duration => Math.min(duration, 30));
+                    } else {
+                        pattern = Math.min(pattern, 30);
+                    }
+                }
                 navigator.vibrate(pattern);
             } catch (error) {
                 // Ignore vibration errors silently
@@ -198,38 +222,58 @@
         if (!originalBall) {
             return false;
         }
+
+        // Кэшируем размеры один раз
         const boardRect = boardEl.getBoundingClientRect();
         const ballRect = originalBall.getBoundingClientRect();
+        const ballSize = Math.min(ballRect.width, ballRect.height);
+        
+        // Создаем клон с оптимизированными стилями для GPU
         const clone = originalBall.cloneNode(true);
         clone.classList.add("ball--in-flight");
-        clone.style.left = `${ballRect.left - boardRect.left}px`;
-        clone.style.top = `${ballRect.top - boardRect.top}px`;
-        clone.style.width = `${ballRect.width}px`;
-        clone.style.height = `${ballRect.height}px`;
+        
+        // Используем transform вместо left/top для лучшей производительности
+        const startX = ballRect.left - boardRect.left + (ballRect.width - ballSize) / 2;
+        const startY = ballRect.top - boardRect.top + (ballRect.height - ballSize) / 2;
+        
+        clone.style.position = "absolute";
+        clone.style.left = `${startX}px`;
+        clone.style.top = `${startY}px`;
+        clone.style.width = `${ballSize}px`;
+        clone.style.height = `${ballSize}px`;
         clone.style.zIndex = "20";
+        clone.style.transform = "translate3d(0, 0, 0)"; // Включаем аппаратное ускорение
+        clone.style.willChange = "transform"; // Подсказка браузеру
+        
         const stepDelay = moveStepDelay();
         clone.style.transitionDuration = stepDelay ? `${stepDelay}ms` : "0ms";
+        clone.style.transitionTimingFunction = "ease-out";
+        
         boardEl.appendChild(clone);
         removeBall(start);
-        const ballWidth = ballRect.width;
-        const ballHeight = ballRect.height;
+
         if (stepDelay === 0) {
+            // Мгновенное перемещение для быстрых устройств
             const lastRect = cellElements[path[path.length - 1]].getBoundingClientRect();
-            const targetLeft = lastRect.left - boardRect.left + (lastRect.width - ballWidth) / 2;
-            const targetTop = lastRect.top - boardRect.top + (lastRect.height - ballHeight) / 2;
-            clone.style.left = `${targetLeft}px`;
-            clone.style.top = `${targetTop}px`;
+            const targetX = lastRect.left - boardRect.left + (lastRect.width - ballSize) / 2;
+            const targetY = lastRect.top - boardRect.top + (lastRect.height - ballSize) / 2;
+            clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY}px, 0)`;
             await wait(0);
         } else {
+            // Плавная анимация с оптимизированными вычислениями
             for (let i = 1; i < path.length; i += 1) {
                 const cellRect = cellElements[path[i]].getBoundingClientRect();
-                const targetLeft = cellRect.left - boardRect.left + (cellRect.width - ballWidth) / 2;
-                const targetTop = cellRect.top - boardRect.top + (cellRect.height - ballHeight) / 2;
-                clone.style.left = `${targetLeft}px`;
-                clone.style.top = `${targetTop}px`;
+                const targetX = cellRect.left - boardRect.left + (cellRect.width - ballSize) / 2;
+                const targetY = cellRect.top - boardRect.top + (cellRect.height - ballSize) / 2;
+                
+                // Используем transform для анимации
+                clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY}px, 0)`;
                 await wait(stepDelay);
             }
         }
+        
+        // Очищаем will-change после анимации
+        clone.style.willChange = "auto";
         clone.remove();
         return true;
     };
@@ -465,16 +509,63 @@
             cell.type = "button";
             cell.className = "cell";
             cell.dataset.index = index;
-            cell.addEventListener("click", () => handleCellInteraction(index));
-            cell.addEventListener("touchend", (event) => {
-                event.preventDefault();
+            
+            // Оптимизированная обработка событий для мобильных устройств
+            let touchStartTime = 0;
+            let touchStartPos = { x: 0, y: 0 };
+            
+            const handleInteraction = (event) => {
+                // Предотвращаем двойные срабатывания
+                if (locked) {
+                    event.preventDefault();
+                    return;
+                }
+                
+                // Для touch событий проверяем, что это не скролл
+                if (event.type === 'touchend') {
+                    const touch = event.changedTouches[0];
+                    const deltaX = Math.abs(touch.clientX - touchStartPos.x);
+                    const deltaY = Math.abs(touch.clientY - touchStartPos.y);
+                    const deltaTime = Date.now() - touchStartTime;
+                    
+                    // Если движение слишком большое или время слишком короткое - игнорируем
+                    if (deltaX > 10 || deltaY > 10 || deltaTime < 100) {
+                        return;
+                    }
+                    
+                    event.preventDefault();
+                }
+                
                 handleCellInteraction(index);
-            }, { passive: false });
+            };
+            
+            // Touch события
+            cell.addEventListener("touchstart", (event) => {
+                const touch = event.touches[0];
+                touchStartTime = Date.now();
+                touchStartPos = { x: touch.clientX, y: touch.clientY };
+            }, { passive: true });
+            
+            cell.addEventListener("touchend", handleInteraction, { passive: false });
+            
+            // Click события (для десктопа)
+            cell.addEventListener("click", (event) => {
+                // Игнорируем click если это было touch событие
+                if (Date.now() - touchStartTime < 500) {
+                    event.preventDefault();
+                    return;
+                }
+                handleInteraction(event);
+            });
+            
+            // Клавиатурные события
             cell.addEventListener("keyup", (event) => {
                 if (event.key === "Enter" || event.key === " ") {
-                    handleCellInteraction(index);
+                    event.preventDefault();
+                    handleInteraction(event);
                 }
             });
+            
             boardEl.appendChild(cell);
             cellElements.push(cell);
         }
