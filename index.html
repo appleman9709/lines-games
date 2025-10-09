@@ -18,31 +18,15 @@
 <body class="theme-modern">
     <main class="game">
         <header class="game__header">
-            <div class="game__summary">
-                <div class="scoreboard" role="group" aria-label="Счёт">
-                    <div class="scoreboard__label">Очки</div>
-                    <div class="scoreboard__value" id="score">0</div>
-                </div>
-                <div class="next" role="group" aria-label="Следующие шары">
-                    <div class="next__label">Следующие</div>
-                    <div class="next__slots" id="next"></div>
-                </div>
+            <div class="score-display score-display--left" id="score">00000</div>
+            <div class="game-title">
+                <div class="next-preview" id="next"></div>
+                <h1 class="title-text">ЛАЙНС 98</h1>
+                <div class="score-display score-display--right" id="lines">00708</div>
             </div>
-            <div class="game__actions" role="group" aria-label="Управление игрой">
-                <button class="button button--primary" id="newGame" type="button">Новая игра</button>
-                <label class="theme-switcher" for="themeSelect">
-                    <span class="theme-switcher__label">Тема</span>
-                    <select id="themeSelect" class="theme-switcher__select">
-                        <option value="modern">Современная</option>
-                        <option value="classic">Классика</option>
-                    </select>
-                </label>
-            </div>
+            <div class="score-display score-display--right-alt" id="level">00046</div>
         </header>
         <section class="board" id="board" aria-label="Игровое поле 9 на 9"></section>
-        <footer class="game__footer">
-            <div class="status" id="status" role="status"></div>
-        </footer>
     </main>
     <script src="script.js"></script>
     <script>

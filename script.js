@@ -17,16 +17,8 @@
     const boardEl = document.getElementById("board");
     const scoreEl = document.getElementById("score");
     const nextEl = document.getElementById("next");
-    const statusEl = document.getElementById("status");
-    const newGameBtn = document.getElementById("newGame");
-    const themeSelect = document.getElementById("themeSelect");
-    const THEMES = {
-        modern: "theme-modern",
-        classic: "theme-classic"
-    };
-    const THEME_STORAGE_KEY = "lines98-theme";
-    const DEFAULT_THEME = "modern";
-    const themeClassList = Object.values(THEMES);
+    const linesEl = document.getElementById("lines");
+    const levelEl = document.getElementById("level");
 
     const boardState = new Array(TOTAL_CELLS).fill(null);
     const cellElements = [];
@@ -35,6 +27,8 @@
     let locked = false;
     let nextColors = [];
     let score = 0;
+    let lines = 0;
+    let level = 1;
 
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const motionQuery = (typeof window !== "undefined" && typeof window.matchMedia === "function")
@@ -77,41 +71,6 @@
         }
     };
 
-    const readStoredTheme = () => {
-        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
-            return null;
-        }
-        try {
-            return window.localStorage.getItem(THEME_STORAGE_KEY);
-        } catch (error) {
-            return null;
-        }
-    };
-
-    const persistTheme = (value) => {
-        if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
-            return;
-        }
-        try {
-            window.localStorage.setItem(THEME_STORAGE_KEY, value);
-        } catch (error) {
-            // Ignore storage errors silently
-        }
-    };
-
-    const applyTheme = (theme, { persist = false } = {}) => {
-        const normalized = Object.prototype.hasOwnProperty.call(THEMES, theme) ? theme : DEFAULT_THEME;
-        if (typeof document !== "undefined" && document.body) {
-            document.body.classList.remove(...themeClassList);
-            document.body.classList.add(THEMES[normalized]);
-        }
-        if (themeSelect) {
-            themeSelect.value = normalized;
-        }
-        if (persist) {
-            persistTheme(normalized);
-        }
-    };
 
     const adjustLuminance = (hex, amount) => {
         let color = hex.replace(/[^0-9a-f]/gi, "");
@@ -230,7 +189,7 @@
         
         // Создаем клон с оптимизированными стилями для GPU
         const clone = originalBall.cloneNode(true);
-        clone.classList.add("ball--in-flight");
+        clone.classList.add("ball--falling");
         
         // Используем transform вместо left/top для лучшей производительности
         const startX = ballRect.left - boardRect.left + (ballRect.width - ballSize) / 2;
@@ -245,31 +204,36 @@
         clone.style.transform = "translate3d(0, 0, 0)"; // Включаем аппаратное ускорение
         clone.style.willChange = "transform"; // Подсказка браузеру
         
-        const stepDelay = moveStepDelay();
-        clone.style.transitionDuration = stepDelay ? `${stepDelay}ms` : "0ms";
-        clone.style.transitionTimingFunction = "ease-out";
-        
         boardEl.appendChild(clone);
         removeBall(start);
 
+        const stepDelay = moveStepDelay();
+        
         if (stepDelay === 0) {
             // Мгновенное перемещение для быстрых устройств
+            clone.remove();
+            return true;
+        } else {
+            // Анимация проваливания
             const lastRect = cellElements[path[path.length - 1]].getBoundingClientRect();
             const targetX = lastRect.left - boardRect.left + (lastRect.width - ballSize) / 2;
             const targetY = lastRect.top - boardRect.top + (lastRect.height - ballSize) / 2;
-            clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY}px, 0)`;
-            await wait(0);
-        } else {
-            // Плавная анимация с оптимизированными вычислениями
-            for (let i = 1; i < path.length; i += 1) {
-                const cellRect = cellElements[path[i]].getBoundingClientRect();
-                const targetX = cellRect.left - boardRect.left + (cellRect.width - ballSize) / 2;
-                const targetY = cellRect.top - boardRect.top + (cellRect.height - ballSize) / 2;
-                
-                // Используем transform для анимации
-                clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY}px, 0)`;
-                await wait(stepDelay);
-            }
+            
+            // Сначала шарик проваливается вниз с эффектом уменьшения
+            clone.style.transitionDuration = `${stepDelay * 2}ms`;
+            clone.style.transitionTimingFunction = "ease-in";
+            clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY + boardRect.height}px, 0) scale(0.3)`;
+            clone.style.opacity = "0.1";
+            
+            await wait(stepDelay * 2);
+            
+            // Затем появляется снизу в целевой позиции с эффектом увеличения
+            clone.style.transitionDuration = `${stepDelay}ms`;
+            clone.style.transitionTimingFunction = "ease-out";
+            clone.style.transform = `translate3d(${targetX - startX}px, ${targetY - startY}px, 0) scale(1)`;
+            clone.style.opacity = "1";
+            
+            await wait(stepDelay);
         }
         
         // Очищаем will-change после анимации
@@ -279,7 +243,9 @@
     };
 
     const updateScore = () => {
-        scoreEl.textContent = score.toString();
+        scoreEl.textContent = score.toString().padStart(5, '0');
+        linesEl.textContent = lines.toString().padStart(5, '0');
+        levelEl.textContent = level.toString().padStart(5, '0');
     };
 
     const updateNextPreview = () => {
@@ -287,10 +253,6 @@
         nextColors.forEach((color) => {
             nextEl.appendChild(createBallElement(color));
         });
-    };
-
-    const setStatus = (text) => {
-        statusEl.textContent = text;
     };
 
     const clearSelection = () => {
@@ -407,8 +369,11 @@
         await wait(180);
         unique.forEach(removeBall);
         score += unique.length * SCORE_PER_BALL;
+        lines += 1;
+        if (lines % 10 === 0) {
+            level += 1;
+        }
         updateScore();
-        setStatus(`Удалено ${unique.length} шаров`);
         vibrate([40, 30, 40]);
     };
 
@@ -442,7 +407,6 @@
 
     const gameOver = () => {
         locked = true;
-        setStatus("Игра окончена. Попробуйте снова!");
         vibrate([80, 40, 80]);
     };
 
@@ -453,7 +417,6 @@
         locked = true;
         const path = findPath(from, to);
         if (!path) {
-            setStatus("Путь заблокирован");
             vibrate(120);
             locked = false;
             return;
@@ -478,7 +441,6 @@
         if (emptyCells().length === 0) {
             gameOver();
         } else {
-            setStatus("Ходите");
             locked = false;
         }
     };
@@ -490,10 +452,8 @@
         if (boardState[index]) {
             if (selectedIndex === index) {
                 clearSelection();
-                setStatus("Выберите шар");
             } else {
                 selectIndex(index);
-                setStatus("Выберите свободную клетку для перемещения");
             }
             return;
         }
@@ -578,18 +538,18 @@
             cell.classList.remove("cell--highlight");
         });
         score = 0;
+        lines = 0;
+        level = 1;
         locked = false;
         selectedIndex = null;
         nextColors = randomColors(BALLS_PER_TURN);
         updateScore();
         updateNextPreview();
-        setStatus("Соберите линии из пяти шаров");
     };
 
     const startGame = async () => {
         resetState();
         await spawnBalls(randomColors(INITIAL_BALLS));
-        setStatus("Ходите");
     };
 
     const handleNewGame = () => {
@@ -599,16 +559,11 @@
         startGame();
     };
 
-    const storedTheme = readStoredTheme();
-    applyTheme(storedTheme || DEFAULT_THEME);
-
     buildBoard();
-    newGameBtn.addEventListener("click", handleNewGame);
-    if (themeSelect) {
-        themeSelect.addEventListener("change", (event) => {
-            applyTheme(event.target.value, { persist: true });
-        });
-    }
+    
+    // Добавляем обработчик для новой игры по клику на игровое поле
+    boardEl.addEventListener("dblclick", handleNewGame);
+    
     window.addEventListener("keydown", (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r") {
             event.preventDefault();
